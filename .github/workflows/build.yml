@@ -25,25 +25,25 @@ jobs:
           cp -R NEXTmenu/.[!.]* . 2>/dev/null || true
         fi
 
-    # 2. حقن إعدادات التوافق داخل ملف Makefile بشكل متوافق تماماً مع سيرفر macOS
-    - name: Clean & Patch Makefile
+    # 2. حقن ملف Makefile بإعدادات تسمح بالـ Modules مع تجاهل أخطاء التعارض
+    - name: Patch Makefile Safely
       run: |
-        echo "جاري إعادة بناء وتعديل ملف Makefile لحظر الموديلات وتجنب أخطاء النظام..."
+        echo "جاري حقن الـ Flags الذكية داخل ملف Makefile..."
         
         if [ -f "Makefile" ]; then
-          # إنشاء ملف مؤقت وحقن الأوامر الصارمة في البداية لتفادي تعارض الموديلات
+          # إنشاء ملف مؤقت مجهز بأوامر تخطي الأخطاء
           cat << 'EOF' > Makefile.new
         GO_EASY_ON_ME = 1
-        ADDITIONAL_CFLAGS = -fno-modules -fno-implicit-modules -Wno-error -Wno-module-import-in-extern-c
-        ADDITIONAL_CXXFLAGS = -fno-modules -fno-implicit-modules -Wno-error -Wno-module-import-in-extern-c -std=c++14
-        ADDITIONAL_LOGOSFLAGS = -fno-modules
+        THEOS_IGNORE_MODULES_ERRORS = 1
+        ADDITIONAL_CFLAGS = -Wno-error -Wno-implicit-function-declaration -Wno-module-import-in-extern-c -Wno-ignored-attributes
+        ADDITIONAL_CXXFLAGS = -Wno-error -Wno-module-import-in-extern-c -Wno-ignored-attributes -std=c++14
         EOF
           
-          # دمج محتوى الـ Makefile الأصلي خلف الإعدادات الجديدة مباشرة
+          # دمج محتويات الـ Makefile الأصلي
           cat Makefile >> Makefile.new
           mv Makefile.new Makefile
           
-          echo "--- تم تحديث وحقن الـ Makefile بنجاح ---"
+          echo "--- تم تحديث الـ Makefile بنجاح ---"
           cat Makefile
         else
           echo "خطأ: لم يتم العثور على ملف Makefile!"
@@ -61,7 +61,7 @@ jobs:
         rm -rf ~/theos/sdks
         git clone --depth=1 https://github.com/xybp888/iOS-SDKs.git ~/theos/sdks
 
-    # 5. تجميع ملف الـ dylib مع إشارة صريحة لمعمارية arm64
+    # 5. تجميع ملف الـ dylib مع معمارية arm64
     - name: Compile Project
       run: |
         export THEOS=~/theos
