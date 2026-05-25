@@ -11,7 +11,7 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    # 1. فك ضغط ملف المشروع وتنظيم المجلدات بشكل تلقائي ونظيف
+    # 1. فك ضغط ملف المشروع وتنظيم المجلدات
     - name: Unzip NEXTmenu File
       run: |
         echo "جاري فك ضغط ملف NEXTmenu.zip..."
@@ -24,37 +24,44 @@ jobs:
           cp -R NEXTmenu/* . 2>/dev/null || true
           cp -R NEXTmenu/.[!.]* . 2>/dev/null || true
         fi
-        echo "--- تم فك الضغط بنجاح ---"
 
-    # 2. تثبيت أداة Theos الرسمية الأساسية
+    # 2. حقن وإجبار الـ Makefile على تعطيل الـ Modules من الجذور
+    - name: Force Patch Makefile
+      run: |
+        echo "جاري تعديل وحقن ملف Makefile لإلغاء الموديلات تماماً..."
+        
+        # إنشاء نسخة احتياطية وتعديل الـ Makefile لإضافة الأوامر الصارمة في أوله
+        if [ -f "Makefile" ]; then
+          sed -i '' '1i\
+        GO_EASY_ON_ME = 1\
+        ADDITIONAL_CFLAGS = -fno-modules -fno-implicit-modules -Wno-error\
+        ADDITIONAL_CXXFLAGS = -fno-modules -fno-implicit-modules -Wno-error -std=c++11\
+        ADDITIONAL_LOGOSFLAGS = -fno-modules\
+        ' Makefile
+          echo "--- محتوى الـ Makefile بعد التعديل القسري ---"
+          cat Makefile
+        else
+          echo "تحذير: لم يتم العثور على ملف Makefile في المجلد الرئيسي!"
+        fi
+
+    # 3. تثبيت أداة Theos الرسمية الأساسية
     - name: Setup Theos Environment
       run: |
         git clone --recursive --depth=1 https://github.com/theos/theos.git ~/theos
 
-    # 3. تحميل الـ SDK المستقر للآيفون
+    # 4. تحميل الـ SDK المستقر للآيفون
     - name: Download iOS SDK
       run: |
         rm -rf ~/theos/sdks
         git clone --depth=1 https://github.com/xybp888/iOS-SDKs.git ~/theos/sdks
 
-    # 4. تجميع ملف الـ dylib مع معالجة تعارض الموديلات والنظام
+    # 5. تجميع ملف الـ dylib
     - name: Compile Project
       run: |
         export THEOS=~/theos
-        
-        # إعدادات ذكية تسمح للموديلات بالعمل لكن تمنعها من إيقاف التجميع عند حدوث تعارض
-        export GO_EASY_ON_ME=1
-        export ADDITIONAL_CFLAGS="-Wno-error -Wno-implicit-function-declaration -Wno-module-import-in-extern-c"
-        export ADDITIONAL_CXXFLAGS="-Wno-error -std=c++14 -Wno-module-import-in-extern-c"
-        
-        # التجميع مع الإشارة إلى معمارية الآيفون الحديثة والـ SDK بشكل مسطح وبسيط
-        make FINALPACKAGE=1 HOME=$HOME \
-          ARCHS="arm64" \
-          ADDITIONAL_CFLAGS="$ADDITIONAL_CFLAGS" \
-          ADDITIONAL_CXXFLAGS="$ADDITIONAL_CXXFLAGS" \
-          TARGET=iphone:clang:latest:14.0
-          
-    # 5. رفع ملف الـ dylib النهائي والجاهز للتحميل
+        make FINALPACKAGE=1 HOME=$HOME TARGET=iphone:clang:latest:14.0
+
+    # 6. رفع ملف الـ dylib النهائي والجاهز للتحميل
     - name: Upload Finished dylib
       uses: actions/upload-artifact@v4
       with:
