@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest # الانتقال إلى نظام ماك لتوفير المترجم الرسمي تلقائياً
 
     steps:
     - name: Checkout Code
@@ -25,33 +25,24 @@ jobs:
           mv NEXTmenu/.[!.]* . 2>/dev/null || true
         fi
 
-        # حذف سطر Vector3.h المفقود تلقائياً
+        # حذف سطر Vector3.h المفقود تلقائياً (متوافق مع ماك)
         if [ -f "Source/Menu.mm" ]; then
-          sed -i '/Includes\/Vector3.h/d' Source/Menu.mm
+          sed -i '' '/Includes\/Vector3.h/d' Source/Menu.mm 2>/dev/null || sed -i '/Includes\/Vector3.h/d' Source/Menu.mm
         fi
         
         echo "--- هيكل الملفات الحالي ---"
         ls -la
 
-    # 2. تثبيت أداة Theos الأساسية مع جلب المجلدات الفرعية (Submodules)
+    # 2. تثبيت أداة Theos الرسمية
     - name: Setup Theos Environment
       run: |
-        sudo apt-get update
-        sudo apt-get install -y clang make perl git rsync libssl-dev
         git clone --recursive --depth=1 https://github.com/theos/theos.git ~/theos
 
-    # 3. تحميل الـ SDK والـ Toolchain (المترجم) لتفادي خطأ clang المفقود
-    - name: Download iOS SDK & Toolchain
+    # 3. تحميل الـ SDK بشكل نظيف (بدون الحاجة لـ Toolchain لأن الماك يمتلكه)
+    - name: Download iOS SDK
       run: |
-        # تهيئة مجلدات الـ SDK والـ Toolchain
         rm -rf ~/theos/sdks
         git clone --depth=1 https://github.com/xybp888/iOS-SDKs.git ~/theos/sdks
-        
-        # تحميل المترجم المخصص لنظام لينكس ليتعرف عليه الـ Makefile فوراً
-        mkdir -p ~/theos/toolchain/linux/iphone
-        curl -LO https://github.com/theos/toolchain/releases/download/v1-linux/linux-arm64-toolchain.tar.lzma
-        tar --lzma -xf linux-arm64-toolchain.tar.lzma -C ~/theos/toolchain/linux/iphone/
-        rm linux-arm64-toolchain.tar.lzma
 
     # 4. تجميع ملف الـ dylib الفعلي
     - name: Compile Project
