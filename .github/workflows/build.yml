@@ -11,13 +11,13 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    # 1. فك ضغط ملف المشروع وتنظيم المجلدات بشكل ذكي وتجنب تعارض الملفات
+    # 1. فك ضغط ملف المشروع وتنظيم المجلدات بشكل تلقائي ونظيف
     - name: Unzip NEXTmenu File
       run: |
         echo "جاري فك ضغط ملف NEXTmenu.zip..."
         unzip -o NEXTmenu.zip
         
-        # التحقق من المجلدات الناتجة ونقل محتوياتها إلى المجلد الرئيسي للعمل
+        # نقل الملفات للمجلد الرئيسي لكي يراها الكومبيلر مباشرة
         if [ -d "ffproje" ]; then
           cp -R ffproje/* . 2>/dev/null || true
           cp -R ffproje/.[!.]* . 2>/dev/null || true
@@ -26,32 +26,27 @@ jobs:
           cp -R NEXTmenu/.[!.]* . 2>/dev/null || true
         fi
 
-        # التأكد من إنشاء مجلد Includes بشكل صحيح في حال عدم وجوده
-        mkdir -p Source/Includes
-        
-        # تحميل ملف Vector3.h المعدل والنظيف ليحل محل الملف القديم تلقائياً وبأمان
-        curl -fsSL "https://gist.githubusercontent.com/Ahmad-Developer-AI/7fca99bb30e017614d33eb431105bd27/raw/Vector3.h" -o Source/Includes/Vector3.h
-        
-        echo "--- تم التحقق وتنظيم الملفات وحقن Vector3 بنجاح ---"
-        ls -la Source/Includes
+        echo "--- تم فك الضغط وتنظيم ملفات أداة فري فاير بنجاح ---"
 
-    # 2. تثبيت أداة Theos الرسمية
+    # 2. تثبيت أداة Theos الرسمية الأساسية
     - name: Setup Theos Environment
       run: |
         git clone --recursive --depth=1 https://github.com/theos/theos.git ~/theos
 
-    # 3. تحميل الـ SDK بشكل نظيف ومتوافق لـ iOS
+    # 3. تحميل الـ SDK المستقر للآيفون
     - name: Download iOS SDK
       run: |
         rm -rf ~/theos/sdks
         git clone --depth=1 https://github.com/xybp888/iOS-SDKs.git ~/theos/sdks
 
-    # 4. تجميع ملف الـ dylib الفعلي للآيفون (arm64)
+    # 4. تجميع ملف الـ dylib مع معالجة وحل مشكلة أخطاء البناء std_float_h
     - name: Compile Project
       run: |
-        make FINALPACKAGE=1 HOME=$HOME
+        # إضافة معايير البناء لحل مشكلة تعارض الـ Modules في السي بلس بلس
+        export THEOS=~/theos
+        make FINALPACKAGE=1 HOME=$HOME ADDITIONAL_CFLAGS="-fno-modules -Wno-error" ADDITIONAL_LOGOSFLAGS="-fno-modules"
 
-    # 5. رفع ملف الـ dylib الناتج للتحميل
+    # 5. رفع ملف الـ dylib النهائي والجاهز للتحميل
     - name: Upload Finished dylib
       uses: actions/upload-artifact@v4
       with:
