@@ -1,0 +1,59 @@
+name: Build dylib
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # 1. فك ضغط ملف NEXTmenu.zip وتنظيم الملفات
+    - name: Unzip NEXTmenu File
+      run: |
+        echo "جاري فك ضغط ملف NEXTmenu.zip..."
+        unzip NEXTmenu.zip
+        
+        if [ -d "ffproje" ]; then
+          mv ffproje/* .
+          mv ffproje/.[!.]* . 2>/dev/null || true
+        elif [ -d "NEXTmenu" ]; then
+          mv NEXTmenu/* .
+          mv NEXTmenu/.[!.]* . 2>/dev/null || true
+        fi
+
+        # حذف سطر Vector3.h المفقود تلقائياً
+        if [ -f "Source/Menu.mm" ]; then
+          sed -i '/Includes\/Vector3.h/d' Source/Menu.mm
+        fi
+        
+        echo "--- هيكل الملفات الحالي ---"
+        ls -la
+
+    # 2. تثبيت أداة Theos الأساسية
+    - name: Setup Theos Environment
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang make perl git rsync libssl-dev
+        git clone --depth=1 https://github.com/theos/theos.git ~/theos
+
+    # 3. تنظيف المسار وتحميل الـ SDK بشكل مضمون 100%
+    - name: Download iOS SDK (Clean Method)
+      run: |
+        rm -rf ~/theos/sdks
+        git clone --depth=1 https://github.com/xybp888/iOS-SDKs.git ~/theos/sdks
+
+    # 4. تجميع ملف الـ dylib الفعلي
+    - name: Compile Project
+      run: |
+        make FINALPACKAGE=1 HOME=$HOME
+
+    # 5. رفع ملف الـ dylib الناتج للتحميل
+    - name: Upload Finished dylib
+      uses: actions/upload-artifact@v4
+      with:
+        name: Compiled-dylib
+        path: .theos/obj/
