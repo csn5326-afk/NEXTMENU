@@ -24,11 +24,6 @@ jobs:
           mv NEXTmenu/* .
           mv NEXTmenu/.[!.]* . 2>/dev/null || true
         fi
-
-        # الحذف الذكي لسطر Vector3.h المتوافق مع نظام الماك لتفادي خطأ illegal byte sequence
-        if [ -f "Source/Menu.mm" ]; then
-          sed -i '' '/Includes\/Vector3.h/d' Source/Menu.mm
-        fi
         
         echo "--- هيكل الملفات الحالي ---"
         ls -la
@@ -44,7 +39,7 @@ jobs:
         rm -rf ~/theos/sdks
         git clone --depth=1 https://github.com/xybp888/iOS-SDKs.git ~/theos/sdks
 
-    # 4. تجميع ملف الـ dylib الفعلي
+    # 4. تجميع ملف الـ dylib الفعلي للآيفون (arm64)
     - name: Compile Project
       run: |
         make FINALPACKAGE=1 HOME=$HOME
