@@ -1,7 +1,7 @@
 name: Build dylib
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # هذا السطر السحري هو المسؤول عن إظهار زر Run workflow الأزرق
 
 jobs:
   build:
@@ -145,12 +145,13 @@ inline Vector3 operator+(Vector3 lhs, const float rhs);
 inline Vector3 operator-(Vector3 lhs, const float rhs);
 inline Vector3 operator*(Vector3 lhs, const float rhs);
 inline Vector3 operator/(Vector3 lhs, const float rhs);
-inline Vector3 operator+(const float lhs, Vector3 rhs);
-inline Vector3 operator-(const float lhs, Vector3 rhs);
-inline Vector3 operator*(const float lhs, Vector3 rhs);
-inline Vector3 operator/(const float lhs, Vector3 rhs);
+inline Vector3 operator+(const float lhs, Vector3 rhs) { return rhs += lhs; }
+inline Vector3 operator-(const float lhs, Vector3 rhs) { return rhs -= lhs; }
+inline Vector3 operator*(const float lhs, Vector3 rhs) { return rhs *= lhs; }
+inline Vector3 operator/(const float lhs, Vector3 rhs) { return rhs /= lhs; }
 inline Vector3 operator+(Vector3 lhs, const Vector3 rhs);
 inline Vector3 operator-(Vector3 lhs, const Vector3 rhs);
+
 inline bool operator==(const Vector3 lhs, const Vector3 rhs);
 inline bool operator!=(const Vector3 lhs, const Vector3 rhs);
 
@@ -253,7 +254,7 @@ inline Vector3 Vector3::Max(Vector3 a, Vector3 b) {
 inline Vector3 Vector3::Min(Vector3 a, Vector3 b) {
     float x = a.x > b.x ? b.x : a.x;
     float y = a.y > b.y ? b.y : a.y;
-    float z = a.z > b.z ? b.z : a.z;
+    float z = a.z > b.z ? a.z : b.z;
     return Vector3(x, y, z);
 }
 
@@ -452,10 +453,6 @@ inline Vector3 operator+(Vector3 lhs, const float rhs) {
 inline Vector3 operator-(Vector3 lhs, const float rhs) { return lhs -= rhs; }
 inline Vector3 operator*(Vector3 lhs, const float rhs) { return lhs *= rhs; }
 inline Vector3 operator/(Vector3 lhs, const float rhs) { return lhs /= rhs; }
-inline Vector3 operator+(const float lhs, Vector3 rhs) { return rhs += lhs; }
-inline Vector3 operator-(const float lhs, Vector3 rhs) { return rhs -= lhs; }
-inline Vector3 operator*(const float lhs, Vector3 rhs) { return rhs *= lhs; }
-inline Vector3 operator/(const float lhs, Vector3 rhs) { return rhs /= lhs; }
 inline Vector3 operator+(Vector3 lhs, const Vector3 rhs) { return lhs += rhs; }
 inline Vector3 operator-(Vector3 lhs, const Vector3 rhs) { return lhs -= rhs; }
 
