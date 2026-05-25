@@ -39,13 +39,23 @@ jobs:
         rm -rf ~/theos/sdks
         git clone --depth=1 https://github.com/xybp888/iOS-SDKs.git ~/theos/sdks
 
-    # 4. تجميع ملف الـ dylib مع معالجة وحل مشكلة أخطاء البناء std_float_h
+    # 4. تجميع ملف الـ dylib الفعلي مع إجبار السيرفر على إيقاف الـ Modules تماماً
     - name: Compile Project
       run: |
-        # إضافة معايير البناء لحل مشكلة تعارض الـ Modules في السي بلس بلس
         export THEOS=~/theos
-        make FINALPACKAGE=1 HOME=$HOME ADDITIONAL_CFLAGS="-fno-modules -Wno-error" ADDITIONAL_LOGOSFLAGS="-fno-modules"
-
+        
+        # إعداد متغيرات البيئة بشكل صارم لتعطيل الـ Modules وإجبار الكومبيلر على التوافق الكامل
+        export GO_EASY_ON_ME=1
+        export INITIAL_CFLAGS="-fno-modules -fno-implicit-modules -Wno-error -Wno-implicit-function-declaration"
+        export INITIAL_CXXFLAGS="-fno-modules -fno-implicit-modules -Wno-error -std=c++11"
+        
+        # تشغيل البناء مع تمرير الـ Flags مباشرة لكل مراحل التجميع
+        make FINALPACKAGE=1 HOME=$HOME \
+          ADDITIONAL_CFLAGS="$INITIAL_CFLAGS" \
+          ADDITIONAL_CXXFLAGS="$INITIAL_CXXFLAGS" \
+          ADDITIONAL_LOGOSFLAGS="-fno-modules" \
+          TARGET=iphone:clang:latest:14.0
+          
     # 5. رفع ملف الـ dylib النهائي والجاهز للتحميل
     - name: Upload Finished dylib
       uses: actions/upload-artifact@v4
