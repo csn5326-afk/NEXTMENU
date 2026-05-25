@@ -33,12 +33,13 @@ jobs:
         echo "--- هيكل الملفات الحالي ---"
         ls -la
 
-    # 2. تثبيت أداة Theos الأساسية
+    # 2. تثبيت أداة Theos الأساسية مع جلب المجلدات الفرعية (Submodules)
     - name: Setup Theos Environment
       run: |
         sudo apt-get update
         sudo apt-get install -y clang make perl git rsync libssl-dev
-        git clone --depth=1 https://github.com/theos/theos.git ~/theos
+        # جلب المستودع مع كافة الملحقات الفرعية لتفادي نقص مجلدات vendor
+        git clone --recursive --depth=1 https://github.com/theos/theos.git ~/theos
 
     # 3. تنظيف المسار وتحميل الـ SDK بشكل مضمون 100%
     - name: Download iOS SDK (Clean Method)
