@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest # الانتقال إلى نظام ماك لتوفير المترجم الرسمي تلقائياً
+    runs-on: macos-latest
 
     steps:
     - name: Checkout Code
@@ -25,9 +25,9 @@ jobs:
           mv NEXTmenu/.[!.]* . 2>/dev/null || true
         fi
 
-        # حذف سطر Vector3.h المفقود تلقائياً (متوافق مع ماك)
+        # الحذف الذكي لسطر Vector3.h المتوافق مع نظام الماك لتفادي خطأ illegal byte sequence
         if [ -f "Source/Menu.mm" ]; then
-          sed -i '' '/Includes\/Vector3.h/d' Source/Menu.mm 2>/dev/null || sed -i '/Includes\/Vector3.h/d' Source/Menu.mm
+          sed -i '' '/Includes\/Vector3.h/d' Source/Menu.mm
         fi
         
         echo "--- هيكل الملفات الحالي ---"
@@ -38,7 +38,7 @@ jobs:
       run: |
         git clone --recursive --depth=1 https://github.com/theos/theos.git ~/theos
 
-    # 3. تحميل الـ SDK بشكل نظيف (بدون الحاجة لـ Toolchain لأن الماك يمتلكه)
+    # 3. تحميل الـ SDK بشكل نظيف ومتوافق
     - name: Download iOS SDK
       run: |
         rm -rf ~/theos/sdks
