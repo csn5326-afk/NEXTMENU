@@ -31,28 +31,23 @@ jobs:
       run: |
         git clone --recursive --depth=1 https://github.com/theos/theos.git ~/theos
 
-    # 3. جلب الـ SDK المستقر والمتوافق مباشرة لتجنب أخطاء الموديولات الحديثة
+    # 3. جلب الـ SDK المستقر عبر Git مباشرة لتفادي مشاكل فك الضغط والأرشيف
     - name: Download Stable iOS SDK
       run: |
         rm -rf ~/theos/sdks
-        mkdir -p ~/theos/sdks
-        # تحميل حزمة SDK إصدار 14.5 المستقرة لتفادي تعارض ملفات النظام الحديثة
-        curl -L "https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz" -o ~/theos/sdks/iPhoneOS14.5.sdk.tar.xz
-        tar -xf ~/theos/sdks/iPhoneOS14.5.sdk.tar.xz -C ~/theos/sdks/
-        rm ~/theos/sdks/iPhoneOS14.5.sdk.tar.xz
+        # تحميل مستودع الـ SDKs المستقرة بشكل مباشر ونظيف جداً
+        git clone --depth=1 https://github.com/theos/sdks.git ~/theos/sdks
 
-    # 4. تجميع المشروع مع فرض معايير التوافق
+    # 4. تجميع المشروع مع معايير التوافق والـ Flags الخاصة بـ Vector3
     - name: Compile Project
       run: |
         export THEOS=~/theos
-        
-        # إعداد متغيرات التجميع لتجاوز التدقيق الصارم
         export GO_EASY_ON_ME=1
         
-        # تشغيل البناء واستهداف بيئة عمل مستقرة
+        # استخدام معايير بناء مرنة تتخطى أخطاء الموديلات وتدعم أحدث إصدارات iOS بشكل تلقائي
         make FINALPACKAGE=1 HOME=$HOME \
           ARCHS="arm64" \
-          TARGET=iphone:clang:14.5:14.0 \
+          TARGET=iphone:clang:16.5:14.0 \
           ADDITIONAL_CFLAGS="-Wno-error -Wno-implicit-function-declaration" \
           ADDITIONAL_CXXFLAGS="-Wno-error -std=c++11"
           
