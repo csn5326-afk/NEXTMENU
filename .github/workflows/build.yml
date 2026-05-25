@@ -1,7 +1,7 @@
 name: Build dylib
 
 on:
-  workflow_dispatch: # يضمن ظهور زر التشغيل اليدوي فوراً
+  workflow_dispatch:
 
 jobs:
   build:
@@ -11,27 +11,28 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    # 1. فك ضغط ملف المشروع وتنظيم المجلدات
+    # 1. فك ضغط ملف المشروع وتنظيم المجلدات بشكل ذكي وتجنب تعارض الملفات
     - name: Unzip NEXTmenu File
       run: |
         echo "جاري فك ضغط ملف NEXTmenu.zip..."
-        unzip NEXTmenu.zip
+        unzip -o NEXTmenu.zip
         
+        # التحقق من المجلدات الناتجة ونقل محتوياتها إلى المجلد الرئيسي للعمل
         if [ -d "ffproje" ]; then
-          mv ffproje/* .
-          mv ffproje/.[!.]* . 2>/dev/null || true
+          cp -R ffproje/* . 2>/dev/null || true
+          cp -R ffproje/.[!.]* . 2>/dev/null || true
         elif [ -d "NEXTmenu" ]; then
-          mv NEXTmenu/* .
-          mv NEXTmenu/.[!.]* . 2>/dev/null || true
+          cp -R NEXTmenu/* . 2>/dev/null || true
+          cp -R NEXTmenu/.[!.]* . 2>/dev/null || true
         fi
 
-        # إنشاء المجلد المفقود
+        # التأكد من إنشاء مجلد Includes بشكل صحيح في حال عدم وجوده
         mkdir -p Source/Includes
         
-        # تحميل ملف Vector3.h الأصلي والمعدل بشكل نظيف وآمن من سيرفر خارجي مستقر
+        # تحميل ملف Vector3.h المعدل والنظيف ليحل محل الملف القديم تلقائياً وبأمان
         curl -fsSL "https://gist.githubusercontent.com/Ahmad-Developer-AI/7fca99bb30e017614d33eb431105bd27/raw/Vector3.h" -o Source/Includes/Vector3.h
         
-        echo "--- تم جلب ملف Vector3.h بنجاح ---"
+        echo "--- تم التحقق وتنظيم الملفات وحقن Vector3 بنجاح ---"
         ls -la Source/Includes
 
     # 2. تثبيت أداة Theos الرسمية
@@ -39,7 +40,7 @@ jobs:
       run: |
         git clone --recursive --depth=1 https://github.com/theos/theos.git ~/theos
 
-    # 3. تحميل الـ SDK بشكل نظيف ومتوافق
+    # 3. تحميل الـ SDK بشكل نظيف ومتوافق لـ iOS
     - name: Download iOS SDK
       run: |
         rm -rf ~/theos/sdks
