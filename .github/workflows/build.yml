@@ -38,14 +38,20 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y clang make perl git rsync libssl-dev
-        # جلب المستودع مع كافة الملحقات الفرعية لتفادي نقص مجلدات vendor
         git clone --recursive --depth=1 https://github.com/theos/theos.git ~/theos
 
-    # 3. تنظيف المسار وتحميل الـ SDK بشكل مضمون 100%
-    - name: Download iOS SDK (Clean Method)
+    # 3. تحميل الـ SDK والـ Toolchain (المترجم) لتفادي خطأ clang المفقود
+    - name: Download iOS SDK & Toolchain
       run: |
+        # تهيئة مجلدات الـ SDK والـ Toolchain
         rm -rf ~/theos/sdks
         git clone --depth=1 https://github.com/xybp888/iOS-SDKs.git ~/theos/sdks
+        
+        # تحميل المترجم المخصص لنظام لينكس ليتعرف عليه الـ Makefile فوراً
+        mkdir -p ~/theos/toolchain/linux/iphone
+        curl -LO https://github.com/theos/toolchain/releases/download/v1-linux/linux-arm64-toolchain.tar.lzma
+        tar --lzma -xf linux-arm64-toolchain.tar.lzma -C ~/theos/toolchain/linux/iphone/
+        rm linux-arm64-toolchain.tar.lzma
 
     # 4. تجميع ملف الـ dylib الفعلي
     - name: Compile Project
