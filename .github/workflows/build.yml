@@ -17,7 +17,6 @@ jobs:
         echo "جاري فك ضغط ملف NEXTmenu.zip..."
         unzip -o NEXTmenu.zip
         
-        # نقل الملفات للمجلد الرئيسي لكي يراها الكومبيلر مباشرة
         if [ -d "ffproje" ]; then
           cp -R ffproje/* . 2>/dev/null || true
           cp -R ffproje/.[!.]* . 2>/dev/null || true
@@ -25,8 +24,7 @@ jobs:
           cp -R NEXTmenu/* . 2>/dev/null || true
           cp -R NEXTmenu/.[!.]* . 2>/dev/null || true
         fi
-
-        echo "--- تم فك الضغط وتنظيم ملفات أداة فري فاير بنجاح ---"
+        echo "--- تم فك الضغط بنجاح ---"
 
     # 2. تثبيت أداة Theos الرسمية الأساسية
     - name: Setup Theos Environment
@@ -39,21 +37,21 @@ jobs:
         rm -rf ~/theos/sdks
         git clone --depth=1 https://github.com/xybp888/iOS-SDKs.git ~/theos/sdks
 
-    # 4. تجميع ملف الـ dylib الفعلي مع إجبار السيرفر على إيقاف الـ Modules تماماً
+    # 4. تجميع ملف الـ dylib مع معالجة تعارض الموديلات والنظام
     - name: Compile Project
       run: |
         export THEOS=~/theos
         
-        # إعداد متغيرات البيئة بشكل صارم لتعطيل الـ Modules وإجبار الكومبيلر على التوافق الكامل
+        # إعدادات ذكية تسمح للموديلات بالعمل لكن تمنعها من إيقاف التجميع عند حدوث تعارض
         export GO_EASY_ON_ME=1
-        export INITIAL_CFLAGS="-fno-modules -fno-implicit-modules -Wno-error -Wno-implicit-function-declaration"
-        export INITIAL_CXXFLAGS="-fno-modules -fno-implicit-modules -Wno-error -std=c++11"
+        export ADDITIONAL_CFLAGS="-Wno-error -Wno-implicit-function-declaration -Wno-module-import-in-extern-c"
+        export ADDITIONAL_CXXFLAGS="-Wno-error -std=c++14 -Wno-module-import-in-extern-c"
         
-        # تشغيل البناء مع تمرير الـ Flags مباشرة لكل مراحل التجميع
+        # التجميع مع الإشارة إلى معمارية الآيفون الحديثة والـ SDK بشكل مسطح وبسيط
         make FINALPACKAGE=1 HOME=$HOME \
-          ADDITIONAL_CFLAGS="$INITIAL_CFLAGS" \
-          ADDITIONAL_CXXFLAGS="$INITIAL_CXXFLAGS" \
-          ADDITIONAL_LOGOSFLAGS="-fno-modules" \
+          ARCHS="arm64" \
+          ADDITIONAL_CFLAGS="$ADDITIONAL_CFLAGS" \
+          ADDITIONAL_CXXFLAGS="$ADDITIONAL_CXXFLAGS" \
           TARGET=iphone:clang:latest:14.0
           
     # 5. رفع ملف الـ dylib النهائي والجاهز للتحميل
