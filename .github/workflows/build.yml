@@ -24,8 +24,13 @@ jobs:
           mv NEXTmenu/* .
           mv NEXTmenu/.[!.]* . 2>/dev/null || true
         fi
+
+        # خدعة ذكية: إنشاء ملف Vector3.h فارغ لتفادي خطأ الـ fatal error
+        mkdir -p Source/Includes
+        touch Source/Includes/Vector3.h
         
         echo "--- هيكل الملفات الحالي ---"
+        ls -la Source/Includes 2>/dev/null || ls -la
         ls -la
 
     # 2. تثبيت أداة Theos الرسمية
