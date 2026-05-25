@@ -11,7 +11,7 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    # 1. فك ضغط ملف المشروع وتنظيم المجلدات
+    # 1. فك ضغط ملف المشروع وتنظيم الملفات
     - name: Unzip NEXTmenu File
       run: |
         echo "جاري فك ضغط ملف NEXTmenu.zip..."
@@ -24,50 +24,39 @@ jobs:
           cp -R NEXTmenu/* . 2>/dev/null || true
           cp -R NEXTmenu/.[!.]* . 2>/dev/null || true
         fi
+        echo "--- تم فك الضغط وتنظيم الملفات بنجاح ---"
 
-    # 2. حقن ملف Makefile بإعدادات تسمح بالـ Modules مع تجاهل أخطاء التعارض
-    - name: Patch Makefile Safely
-      run: |
-        echo "جاري حقن الـ Flags الذكية داخل ملف Makefile..."
-        
-        if [ -f "Makefile" ]; then
-          # إنشاء ملف مؤقت مجهز بأوامر تخطي الأخطاء
-          cat << 'EOF' > Makefile.new
-        GO_EASY_ON_ME = 1
-        THEOS_IGNORE_MODULES_ERRORS = 1
-        ADDITIONAL_CFLAGS = -Wno-error -Wno-implicit-function-declaration -Wno-module-import-in-extern-c -Wno-ignored-attributes
-        ADDITIONAL_CXXFLAGS = -Wno-error -Wno-module-import-in-extern-c -Wno-ignored-attributes -std=c++14
-        EOF
-          
-          # دمج محتويات الـ Makefile الأصلي
-          cat Makefile >> Makefile.new
-          mv Makefile.new Makefile
-          
-          echo "--- تم تحديث الـ Makefile بنجاح ---"
-          cat Makefile
-        else
-          echo "خطأ: لم يتم العثور على ملف Makefile!"
-          exit 1
-        fi
-
-    # 3. تثبيت أداة Theos الرسمية الأساسية
+    # 2. تثبيت أداة Theos الرسمية الأساسية
     - name: Setup Theos Environment
       run: |
         git clone --recursive --depth=1 https://github.com/theos/theos.git ~/theos
 
-    # 4. تحميل الـ SDK المستقر للآيفون
-    - name: Download iOS SDK
+    # 3. جلب الـ SDK المستقر والمتوافق مباشرة لتجنب أخطاء الموديولات الحديثة
+    - name: Download Stable iOS SDK
       run: |
         rm -rf ~/theos/sdks
-        git clone --depth=1 https://github.com/xybp888/iOS-SDKs.git ~/theos/sdks
+        mkdir -p ~/theos/sdks
+        # تحميل حزمة SDK إصدار 14.5 المستقرة لتفادي تعارض ملفات النظام الحديثة
+        curl -L "https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz" -o ~/theos/sdks/iPhoneOS14.5.sdk.tar.xz
+        tar -xf ~/theos/sdks/iPhoneOS14.5.sdk.tar.xz -C ~/theos/sdks/
+        rm ~/theos/sdks/iPhoneOS14.5.sdk.tar.xz
 
-    # 5. تجميع ملف الـ dylib مع معمارية arm64
+    # 4. تجميع المشروع مع فرض معايير التوافق
     - name: Compile Project
       run: |
         export THEOS=~/theos
-        make FINALPACKAGE=1 HOME=$HOME ARCHS="arm64" TARGET=iphone:clang:latest:14.0
-
-    # 6. رفع ملف الـ dylib النهائي والجاهز للتحميل
+        
+        # إعداد متغيرات التجميع لتجاوز التدقيق الصارم
+        export GO_EASY_ON_ME=1
+        
+        # تشغيل البناء واستهداف بيئة عمل مستقرة
+        make FINALPACKAGE=1 HOME=$HOME \
+          ARCHS="arm64" \
+          TARGET=iphone:clang:14.5:14.0 \
+          ADDITIONAL_CFLAGS="-Wno-error -Wno-implicit-function-declaration" \
+          ADDITIONAL_CXXFLAGS="-Wno-error -std=c++11"
+          
+    # 5. رفع ملف الـ dylib النهائي والجاهز للتحميل
     - name: Upload Finished dylib
       uses: actions/upload-artifact@v4
       with:
